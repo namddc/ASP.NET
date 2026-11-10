@@ -6,31 +6,33 @@
 
 <h1>Index</h1>
 
+@* TÌM KIẾM: Form tìm kiếm *@
 <form asp-action="Index" method="get">
     <p>
         Tìm kiếm: 
-        <input type="text" name="searchString" value="@ViewBag.CurrentFilter" placeholder="Nhập tên hoặc ID..." /> @* Ô nhập từ khóa, giữ lại từ khóa cũ *@
-        <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />                                      @* Input ẩn giữ trạng thái sắp xếp khi tìm *@
-        <input type="submit" value="Search" class="btn btn-primary btn-sm" />                                      @* Nút bấm tìm kiếm *@
-        <a asp-action="Index">Quay lại danh sách</a>                                                               @* Bấm vào để xóa bộ lọc *@
+        <input type="text" name="searchString" value="@ViewBag.CurrentFilter" placeholder="Nhập tên hoặc ID..." />
+        <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
+        <input type="submit" value="Search" class="btn btn-primary btn-sm" />
+        <a asp-action="Index">Quay lại danh sách</a>
     </p>
 </form>
 
 <p>
-    <a asp-action="Create">Create New</a> @* Link chuyển sang trang tạo mới sản phẩm *@
+    @* THÊM: Link tạo mới sản phẩm *@
+    <a asp-action="Create">Create New</a>
 </p>
 
 <table class="table">
     <thead>
         <tr>
             <th>
-                @* Link bấm vào tiêu đề ProductId để sắp xếp tăng/giảm *@
+                @* SẮP XẾP: Sắp xếp theo ProductId *@
                 <a asp-action="Index" asp-route-sortOrder="@ViewBag.IdSortParm" asp-route-currentFilter="@ViewBag.CurrentFilter">
                     ProductId @(ViewBag.CurrentSort == "id_desc" ? "▼" : "▲")
                 </a>
             </th>
             <th>
-                @* Link bấm vào tiêu đề Name để sắp xếp từ A-Z hoặc Z-A *@
+                @* SẮP XẾP: Sắp xếp theo Name *@
                 <a asp-action="Index" asp-route-sortOrder="@ViewBag.NameSortParm" asp-route-currentFilter="@ViewBag.CurrentFilter">
                     Name @(ViewBag.CurrentSort == "name_desc" ? "▼" : (ViewBag.CurrentSort == "name_asc" ? "▲" : ""))
                 </a>
@@ -42,40 +44,36 @@
         </tr>
     </thead>
     <tbody>
-@* Vòng lặp duyệt qua từng sản phẩm trong trang hiện tại *@
 @foreach (var item in Model) {
         <tr>
-            <td>@Html.DisplayFor(modelItem => item.ProductId)</td>    @* Hiển thị ID *@
-            <td>@Html.DisplayFor(modelItem => item.Name)</td>         @* Hiển thị Tên *@
-            <td>@Html.DisplayFor(modelItem => item.Description)</td>  @* Hiển thị Mô tả *@
-            <td>@Html.DisplayFor(modelItem => item.Price)</td>        @* Hiển thị Giá tiền *@
-            <td>@Html.DisplayFor(modelItem => item.CategoryName)</td> @* Hiển thị Tên danh mục *@
+            <td>@Html.DisplayFor(modelItem => item.ProductId)</td>
+            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+            <td>@Html.DisplayFor(modelItem => item.Description)</td>
+            <td>@Html.DisplayFor(modelItem => item.Price)</td>
+            <td>@Html.DisplayFor(modelItem => item.CategoryName)</td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { id = item.ProductId }) |       @* Link sửa *@
-                @Html.ActionLink("Details", "Details", new { id = item.ProductId }) | @* Link chi tiết *@
-                @Html.ActionLink("Delete", "Delete", new { id = item.ProductId })     @* Link xóa *@
+                @* SỬA và XÓA: Các liên kết thao tác *@
+                @Html.ActionLink("Edit", "Edit", new { id = item.ProductId }) |
+                @Html.ActionLink("Details", "Details", new { id = item.ProductId }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.ProductId })
             </td>
         </tr>
 }
     </tbody>
 </table>
 
-@* Thanh phân trang hiển thị bên dưới bảng *@
 <div>
     <span>Trang @Model.PageIndex / @(Model.TotalPages == 0 ? 1 : Model.TotalPages) (Tổng: @Model.TotalItems)</span>
     <ul class="pagination pagination-sm d-inline-flex ms-3">
-        @* Nút chuyển về trang trước, nếu ở trang 1 thì disable *@
         <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
             <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex - 1)" asp-route-sortOrder="@ViewBag.CurrentSort" asp-route-currentFilter="@ViewBag.CurrentFilter">Trước</a>
         </li>
-        @* Vòng lặp in ra các số trang (1, 2, 3...) *@
         @for (int i = 1; i <= Model.TotalPages; i++)
         {
             <li class="page-item @(i == Model.PageIndex ? "active" : "")">
                 <a class="page-link" asp-action="Index" asp-route-pageNumber="@i" asp-route-sortOrder="@ViewBag.CurrentSort" asp-route-currentFilter="@ViewBag.CurrentFilter">@i</a>
             </li>
         }
-        @* Nút chuyển sang trang sau, nếu ở trang cuối thì disable *@
         <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
             <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageIndex + 1)" asp-route-sortOrder="@ViewBag.CurrentSort" asp-route-currentFilter="@ViewBag.CurrentFilter">Sau</a>
         </li>

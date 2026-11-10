@@ -5,30 +5,24 @@ namespace bai5.Models
 {
     public class Product
     {
-        // [Key]: Chỉ định ProductId là khóa chính (Primary Key)
-        [Key]
-        public int ProductId { get; set; }
+        [Key]                                                                                   // Đánh dấu ProductId là khóa chính (Primary Key)
+        public int ProductId { get; set; }                                                      // Mã sản phẩm
 
-        // [Required]: Bắt buộc phải nhập, không được để trống
-        [Required(ErrorMessage = "Bạn chưa nhập name")]
-        // [StringLength]: Giới hạn độ dài chuỗi từ 3 đến 100 ký tự
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "Name phải từ 3 đến 100 ký tự")]
-        public string? Name { get; set; }
+        [Required(ErrorMessage = "Bạn chưa nhập name")]                                         // Bắt buộc nhập, không được để trống
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Name phải từ 3 đến 100 ký tự")]   // Độ dài chuỗi từ 3 đến 100 ký tự
+        public string? Name { get; set; }                                                       // Tên sản phẩm
 
-        [Required(ErrorMessage = "Bạn chưa nhập description")]
-        [StringLength(500, ErrorMessage = "Description không được vượt quá 500 ký tự")]
-        public string? Description { get; set; }
+        [Required(ErrorMessage = "Bạn chưa nhập description")]                                  // Bắt buộc nhập mô tả
+        [StringLength(500, ErrorMessage = "Description không được vượt quá 500 ký tự")]          // Tối đa 500 ký tự
+        public string? Description { get; set; }                                                // Mô tả sản phẩm
 
-        [Required(ErrorMessage = "Bạn chưa nhập price")]
-        // [Range]: Giới hạn giá trị số trong khoảng từ 0.01 đến 100000.00
-        [Range(0.01, 100000, ErrorMessage = "Price phải từ 0.01 đến 10000.00")]
-        public decimal Price { get; set; }
+        [Required(ErrorMessage = "Bạn chưa nhập price")]                                        // Bắt buộc nhập giá
+        [Range(0.01, 100000, ErrorMessage = "Price phải từ 0.01 đến 10000.00")]                  // Giá trị số từ 0.01 đến 100.000
+        public decimal Price { get; set; }                                                      // Giá bán
 
-        // [ForeignKey("Category")]: Đánh dấu CategoryId là khóa ngoại liên kết tới bảng Category
-        [ForeignKey("Category")]
-        public int CategoryId { get; set; }
+        [ForeignKey("Category")]                                                                // Khóa ngoại liên kết tới bảng Category
+        public int CategoryId { get; set; }                                                     // Mã danh mục
 
-        // Navigation Property: Thuộc tính điều hướng để truy xuất đối tượng Category tương ứng
-        public Category? Category { get; set; }
+        public Category? Category { get; set; }                                                 // Thuộc tính điều hướng liên kết bảng Category
     }
 }

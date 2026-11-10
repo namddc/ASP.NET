@@ -7,10 +7,7 @@ namespace bai5.Controllers
 {
     public class ProductController : Controller
     {
-        // =========================================================================
-        // 1. GIẢ LẬP CƠ SỞ DỮ LIỆU (IN-MEMORY DATABASE)
-        // Dùng biến static để lưu dữ liệu tạm thời trong bộ nhớ RAM khi chạy ứng dụng
-        // =========================================================================
+        // Danh sách giả lập Database lưu tạm trong RAM máy tính
         public static List<Product> products = new List<Product>
         {
             new Product { ProductId = 1, Name = "Product 1", Description = "Description 1", Price = 10.0m, CategoryId = 1 },
@@ -23,227 +20,161 @@ namespace bai5.Controllers
             new Product { ProductId = 8, Name = "Product 8", Description = "Description 8", Price = 80.0m, CategoryId = 3 }
         };
 
-        // =========================================================================
-        // 2. ACTION INDEX: HIỂN THỊ DANH SÁCH + TÌM KIẾM + SẮP XẾP + PHÂN TRANG
-        // Các tham số nhận vào từ URL (Query String):
-        // - sortOrder: Kiểu sắp xếp hiện tại (ví dụ: id_desc, name_asc, name_desc)
-        // - currentFilter: Từ khóa tìm kiếm đang áp dụng (dùng khi bấm chuyển trang)
-        // - searchString: Từ khóa mới người dùng nhập vào form tìm kiếm
-        // - pageNumber: Số trang người dùng muốn xem (ví dụ: trang 1, trang 2)
-        // =========================================================================
-        public ActionResult Index(string? sortOrder, string? currentFilter, string? searchString, int? pageNumber)
+        // Action hiển thị danh sách: Tìm kiếm + Sắp xếp + Phân trang
+        public ActionResult Index(
+            string? sortOrder,     // Tham số nhận kiểu sắp xếp (id_asc, id_desc, name_asc, name_desc)
+            string? currentFilter, // Tham số giữ từ khóa tìm kiếm khi bấm chuyển trang
+            string? searchString,  // Tham số nhận từ khóa người dùng gõ vào ô tìm kiếm
+            int? pageNumber)       // Tham số nhận số trang người dùng muốn xem (1, 2, 3...)
         {
-            // --- BƯỚC 1: XỬ LÝ SẮP XẾP (SORTING) ---
-            // Lưu lại kiểu sắp xếp hiện tại để View hiển thị mũi tên ▲ / ▼
-            ViewBag.CurrentSort = sortOrder;
+            ViewBag.CurrentSort = sortOrder; // Gửi kiểu sắp xếp hiện tại sang View để vẽ mũi tên ▲ / ▼
 
-            // Thiết lập giá trị đảo chiều sắp xếp cho lần click tiếp theo:
-            // Nếu hiện tại đang là tăng dần (hoặc rỗng) -> lần click tới sẽ là giảm dần (id_desc)
+            // Tạo giá trị đảo chiều: nếu đang tăng (hoặc rỗng) thì click lần tới sẽ thành giảm (id_desc)
             ViewBag.IdSortParm = string.IsNullOrEmpty(sortOrder) || sortOrder == "id_asc" ? "id_desc" : "id_asc";
-            // Nếu hiện tại đang là A-Z (name_asc) -> lần click tới sẽ là Z-A (name_desc)
+            // Đảo chiều sắp xếp tên: nếu đang A-Z (name_asc) thì lần tới sẽ thành Z-A (name_desc)
             ViewBag.NameSortParm = sortOrder == "name_asc" ? "name_desc" : "name_asc";
 
-            // --- BƯỚC 2: XỬ LÝ TÌM KIẾM (FILTERING / SEARCH) ---
-            // Nếu người dùng nhập từ khóa mới: Bắt buộc reset trang về trang 1
-            if (searchString != null)
+            if (searchString != null) // Nếu người dùng vừa gõ từ khóa mới và bấm Search
             {
-                pageNumber = 1;
+                pageNumber = 1;       // Bắt buộc quay về trang 1 để xem từ đầu
             }
-            else
+            else                      // Nếu người dùng đang bấm nút chuyển trang (2, 3...)
             {
-                // Nếu người dùng đang bấm chuyển trang: Giữ nguyên từ khóa cũ (currentFilter)
-                searchString = currentFilter;
+                searchString = currentFilter; // Giữ lại từ khóa tìm kiếm cũ trước đó
             }
-            // Gửi từ khóa sang View để giữ lại chữ trong ô input và gắn vào link phân trang
-            ViewBag.CurrentFilter = searchString;
+            ViewBag.CurrentFilter = searchString; // Gửi lại từ khóa sang View để giữ chữ trong ô input
 
-            // --- BƯỚC 3: DÙNG LINQ KẾT HỢP DỮ LIỆU (JOIN BẢNG PRODUCT VỚI CATEGORY) ---
-            // Vì bảng Product chỉ có CategoryId (khóa ngoại), ta cần Join với bảng Category
-            // để lấy ra CategoryName (tên danh mục) đổ vào ViewModel
-            var query = from p in products
-                        join c in CategoryController.categories on p.CategoryId equals c.CategoryId into gj
-                        from subCategory in gj.DefaultIfEmpty() // Left Join đề phòng sản phẩm chưa có danh mục
-                        select new ViewModel.ProductViewModel
+            // Dùng LINQ Join bảng Product với Category để lấy ra tên danh mục (CategoryName)
+            var query = from p in products                                        // Lấy từng Product trong danh sách
+                        join c in CategoryController.categories on p.CategoryId equals c.CategoryId into gj // Khớp CategoryId
+                        from subCategory in gj.DefaultIfEmpty()                   // Left join đề phòng sản phẩm chưa có Category
+                        select new ViewModel.ProductViewModel                     // Đổ dữ liệu sang ViewModel để hiển thị
                         {
-                            ProductId = p.ProductId,
-                            Name = p.Name,
-                            Description = p.Description,
-                            Price = p.Price,
-                            CategoryName = subCategory != null ? subCategory.Name : string.Empty
+                            ProductId = p.ProductId,                             // Lấy mã sản phẩm
+                            Name = p.Name,                                       // Lấy tên sản phẩm
+                            Description = p.Description,                         // Lấy mô tả sản phẩm
+                            Price = p.Price,                                     // Lấy giá tiền
+                            CategoryName = subCategory != null ? subCategory.Name : string.Empty // Lấy tên danh mục
                         };
 
-            // --- BƯỚC 4: LỌC DANH SÁCH THEO TỪ KHÓA TÌM KIẾM ---
-            if (!string.IsNullOrEmpty(searchString))
+            if (!string.IsNullOrEmpty(searchString)) // Nếu có nhập từ khóa tìm kiếm
             {
-                // Lọc theo Name (không phân biệt hoa thường) HOẶC lọc theo ProductId
-                query = query.Where(p => (p.Name != null && p.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                                      || p.ProductId.ToString().Contains(searchString));
+                query = query.Where(p => 
+                    (p.Name != null && p.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) // Tìm theo tên (không phân biệt hoa/thường)
+                    || p.ProductId.ToString().Contains(searchString));                                   // Hoặc tìm theo mã ID sản phẩm
             }
 
-            // --- BƯỚC 5: THỰC HIỆN SẮP XẾP DANH SÁCH ---
-            query = sortOrder switch
+            query = sortOrder switch // Thực hiện sắp xếp danh sách theo kiểu đã chọn
             {
-                "id_desc" => query.OrderByDescending(p => p.ProductId), // ID giảm dần (từ lớn đến bé)
-                "name_asc" => query.OrderBy(p => p.Name),               // Tên từ A -> Z
-                "name_desc" => query.OrderByDescending(p => p.Name),     // Tên từ Z -> A
+                "id_desc" => query.OrderByDescending(p => p.ProductId), // Sắp xếp ID giảm dần (từ lớn đến bé)
+                "name_asc" => query.OrderBy(p => p.Name),               // Sắp xếp Tên từ A đến Z
+                "name_desc" => query.OrderByDescending(p => p.Name),     // Sắp xếp Tên từ Z đến A
                 _ => query.OrderBy(p => p.ProductId)                   // Mặc định: ID tăng dần (1, 2, 3...)
             };
 
-            // --- BƯỚC 6: PHÂN TRANG (PAGINATION) ---
-            int pageSize = 3;                  // Số bản ghi hiển thị trên mỗi trang (ở đây đặt là 3)
-            int pageIndex = pageNumber ?? 1;   // Nếu không truyền số trang thì mặc định lấy trang 1
-            
-            // Gọi lớp PaginatedList để dùng Skip() và Take() cắt đúng 3 bản ghi của trang đó
+            int pageSize = 3;                // Quy định mỗi trang chỉ hiển thị đúng 3 sản phẩm
+            int pageIndex = pageNumber ?? 1; // Nếu không chọn trang thì mặc định lấy trang 1
+            // Cắt đúng 3 sản phẩm của trang tương ứng bằng hàm Skip() và Take()
             var pagedProducts = PaginatedList<ViewModel.ProductViewModel>.Create(query, pageIndex, pageSize);
 
-            // Trả về View danh sách đã phân trang
-            return View(pagedProducts);
+            return View(pagedProducts);      // Trả 3 sản phẩm của trang đó ra View
         }
 
-        // =========================================================================
-        // 3. ACTION DETAILS: XEM CHI TIẾT 1 SẢN PHẨM THEO ID
-        // =========================================================================
+        // Action xem chi tiết sản phẩm theo ID
         public ActionResult Details(int id)
         {
-            // Tìm sản phẩm theo id
-            var product = products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound(); // Trả về trang 404 nếu không tìm thấy
-            }
+            var product = products.FirstOrDefault(p => p.ProductId == id); // Tìm sản phẩm có ProductId khớp với id truyền vào
+            if (product == null) return NotFound();                        // Không thấy thì trả về lỗi 404
 
-            // Lấy tên danh mục tương ứng của sản phẩm đó
-            var category = CategoryController.categories.FirstOrDefault(c => c.CategoryId == product.CategoryId);
-
-            // Gán dữ liệu sang ProductViewModel để hiển thị ra View
-            var productViewModel = new ViewModel.ProductViewModel
+            var category = CategoryController.categories.FirstOrDefault(c => c.CategoryId == product.CategoryId); // Tìm danh mục tương ứng
+            var productViewModel = new ViewModel.ProductViewModel          // Tạo đối tượng ViewModel chứa đầy đủ thông tin
             {
                 ProductId = product.ProductId,
                 Name = product.Name,
                 Description = product.Description,
                 Price = product.Price,
-                CategoryName = category?.Name
+                CategoryName = category?.Name                              // Lấy tên danh mục để xem chi tiết
             };
             return View(productViewModel);
         }
 
-        // =========================================================================
-        // 4. ACTION CREATE (GET): HIỂN THỊ FORM THÊM MỚI SẢN PHẨM
-        // =========================================================================
+        // Action mở giao diện form thêm mới (GET)
         public ActionResult Create()
         {
-            // Tạo SelectList (danh sách dropdown chọn Category) truyền sang View qua ViewBag
-            // Tham số: Nguồn danh sách, trường làm giá trị (CategoryId), trường hiển thị (Name)
-            ViewBag.CategoryId = new SelectList(
-                CategoryController.categories, "CategoryId", "Name");
+            // Tạo danh sách dropdown chọn Category: Value là CategoryId, Text hiển thị là Name
+            ViewBag.CategoryId = new SelectList(CategoryController.categories, "CategoryId", "Name");
             return View();
         }
 
-        // =========================================================================
-        // 5. ACTION CREATE (POST): NHẬN DỮ LIỆU TỪ FORM VÀ LƯU VÀO DANH SÁCH
-        // =========================================================================
+        // Action nhận dữ liệu gửi lên từ form thêm mới (POST)
         [HttpPost]
-        [ValidateAntiForgeryToken] // Chống tấn công giả mạo yêu cầu chéo (CSRF)
+        [ValidateAntiForgeryToken] // Chống tấn công giả mạo CSRF
         public ActionResult Create(Product createproduct)
         {
-            // Kiểm tra tính hợp lệ của dữ liệu theo các DataAnnotations khai báo ở Model Product
-            if (ModelState.IsValid)
+            if (ModelState.IsValid) // Kiểm tra dữ liệu có hợp lệ theo các ràng buộc ở Model không
             {
-                // Tự động tăng ID: lấy ID lớn nhất hiện tại cộng thêm 1
+                // Tự động sinh ID: lấy ID to nhất trong danh sách cộng 1
                 createproduct.ProductId = products.Count > 0 ? products.Max(p => p.ProductId) + 1 : 1;
-                products.Add(createproduct); // Thêm vào danh sách
-                return RedirectToAction(nameof(Index)); // Chuyển hướng về trang danh sách
+                products.Add(createproduct);            // Thêm sản phẩm mới vào danh sách
+                return RedirectToAction(nameof(Index)); // Thêm xong chuyển về trang danh sách
             }
-
-            // Nếu dữ liệu không hợp lệ (ví dụ để trống tên, sai giá tiền):
-            // Phải nạp lại SelectList danh mục rồi hiển thị lại form kèm thông báo lỗi
-            ViewBag.CategoryId = new SelectList(
-                CategoryController.categories, "CategoryId", "Name", createproduct.CategoryId);
+            // Nếu dữ liệu lỗi thì nạp lại dropdown Category và giữ lại trang form để người dùng sửa lỗi
+            ViewBag.CategoryId = new SelectList(CategoryController.categories, "CategoryId", "Name", createproduct.CategoryId);
             return View(createproduct);
         }
 
-        // =========================================================================
-        // 6. ACTION EDIT (GET): HIỂN THỊ FORM CHỈNH SỬA SẢN PHẨM THEO ID
-        // =========================================================================
+        // Action mở giao diện form chỉnh sửa sản phẩm (GET)
         public ActionResult Edit(int id)
         {
-            var product = products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = products.FirstOrDefault(p => p.ProductId == id); // Tìm sản phẩm cần sửa theo ID
+            if (product == null) return NotFound();
 
-            // Đổ danh sách Category vào dropdown và chọn sẵn CategoryId hiện tại của sản phẩm
-            ViewBag.CategoryId = new SelectList(
-                CategoryController.categories, "CategoryId", "Name", product.CategoryId);
+            // Nạp dropdown Category và chọn sẵn CategoryId hiện tại của sản phẩm
+            ViewBag.CategoryId = new SelectList(CategoryController.categories, "CategoryId", "Name", product.CategoryId);
             return View(product);
         }
 
-        // =========================================================================
-        // 7. ACTION EDIT (POST): CẬP NHẬT THÔNG TIN SẢN PHẨM
-        // =========================================================================
+        // Action nhận dữ liệu cập nhật từ form sửa gửi lên (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit(Product editproduct)
         {
             if (ModelState.IsValid)
             {
-                // Tìm sản phẩm gốc trong danh sách theo ProductId
-                var product = products.FirstOrDefault(p => p.ProductId == editproduct.ProductId);
-                if (product == null)
-                {
-                    return NotFound();
-                }
+                var product = products.FirstOrDefault(p => p.ProductId == editproduct.ProductId); // Tìm sản phẩm gốc trong danh sách
+                if (product == null) return NotFound();
 
-                // Cập nhật các thông tin mới từ form vào sản phẩm gốc
-                product.Name = editproduct.Name;
-                product.Description = editproduct.Description;
-                product.Price = editproduct.Price;
-                product.CategoryId = editproduct.CategoryId;
-
-                return RedirectToAction(nameof(Index));
+                product.Name = editproduct.Name;               // Cập nhật tên mới
+                product.Description = editproduct.Description; // Cập nhật mô tả mới
+                product.Price = editproduct.Price;             // Cập nhật giá mới
+                product.CategoryId = editproduct.CategoryId;   // Cập nhật danh mục mới
+                return RedirectToAction(nameof(Index));        // Sửa xong chuyển về trang danh sách
             }
-
-            // Nếu dữ liệu form không hợp lệ, nạp lại SelectList và giữ lại trang sửa
-            ViewBag.CategoryId = new SelectList(
-                CategoryController.categories, "CategoryId", "Name", editproduct.CategoryId);
+            ViewBag.CategoryId = new SelectList(CategoryController.categories, "CategoryId", "Name", editproduct.CategoryId);
             return View(editproduct);
         }
 
-        // =========================================================================
-        // 8. ACTION DELETE (GET): HIỂN THỊ TRANG XÁC NHẬN XÓA SẢN PHẨM
-        // =========================================================================
+        // Action mở giao diện xác nhận xóa sản phẩm (GET)
         public ActionResult Delete(int id)
         {
-            var product = products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = products.FirstOrDefault(p => p.ProductId == id); // Tìm sản phẩm cần xóa
+            if (product == null) return NotFound();
 
-            // Lấy tên Category để hiển thị lên thông tin xác nhận xóa
-            var category = CategoryController.categories.FirstOrDefault(c => c.CategoryId == product.CategoryId);
+            var category = CategoryController.categories.FirstOrDefault(c => c.CategoryId == product.CategoryId); // Tìm tên Category để hiện lên
             ViewBag.CategoryName = category?.Name;
-
             return View(product);
         }
 
-        // =========================================================================
-        // 9. ACTION DELETE (POST): THỰC HIỆN XÓA SẢN PHẨM KHỎI DANH SÁCH
-        // =========================================================================
+        // Action thực hiện xóa sản phẩm khi người dùng ấn nút xác nhận xóa (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Delete(int id, IFormCollection collection)
         {
-            var product = products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = products.FirstOrDefault(p => p.ProductId == id); // Tìm sản phẩm theo id
+            if (product == null) return NotFound();
 
-            // Xóa sản phẩm khỏi List
-            products.Remove(product);
-            return RedirectToAction(nameof(Index));
+            products.Remove(product);               // Xóa sản phẩm ra khỏi danh sách
+            return RedirectToAction(nameof(Index)); // Xóa xong chuyển về trang danh sách
         }
     }
 }

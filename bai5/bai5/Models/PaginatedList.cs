@@ -1,58 +1,37 @@
 namespace bai5.Models
 {
-    // =========================================================================
-    // LỚP HỖ TRỢ PHÂN TRANG (PAGINATEDLIST)
-    // - Tự xây dựng kế thừa từ List<T> chuẩn theo tài liệu Microsoft
-    // - Không cần cài thêm thư viện NuGet nào khác, tương thích 100% mọi bản .NET
-    // =========================================================================
+    // Lớp hỗ trợ phân trang generic, kế thừa từ List<T>
     public class PaginatedList<T> : List<T>
     {
-        // Trang hiện tại (ví dụ: Trang 1, Trang 2)
-        public int PageIndex { get; private set; }
+        public int PageIndex { get; private set; }  // Số thứ tự của trang hiện tại (1, 2, 3...)
+        public int TotalPages { get; private set; } // Tổng số trang được tính ra
+        public int TotalItems { get; private set; } // Tổng số lượng bản ghi trong toàn bộ danh sách
+        public int PageSize { get; private set; }   // Số lượng bản ghi trên một trang (ví dụ: 3)
 
-        // Tổng số trang (ví dụ: có 8 sản phẩm, mỗi trang 3 cái -> Tổng có 3 trang)
-        public int TotalPages { get; private set; }
-
-        // Tổng số bản ghi (ví dụ: 8 sản phẩm)
-        public int TotalItems { get; private set; }
-
-        // Kích thước trang (số bản ghi trên 1 trang, ví dụ: 3)
-        public int PageSize { get; private set; }
-
-        // Hàm khởi tạo (Constructor)
+        // Hàm khởi tạo
         public PaginatedList(List<T> items, int count, int pageIndex, int pageSize)
         {
-            PageIndex = pageIndex;
-            // Tính tổng số trang: Làm tròn lên (Math.Ceiling), ví dụ: 8 / 3 = 2.66 -> làm tròn thành 3 trang
-            TotalPages = (int)Math.Ceiling(count / (double)pageSize);
-            TotalItems = count;
-            PageSize = pageSize;
+            PageIndex = pageIndex;                                         // Gán trang hiện tại
+            TotalPages = (int)Math.Ceiling(count / (double)pageSize);       // Tính tổng số trang: chia làm tròn lên (8/3 = 3)
+            TotalItems = count;                                            // Gán tổng số phần tử
+            PageSize = pageSize;                                           // Gán số phần tử mỗi trang
 
-            // Thêm các phần tử của trang hiện tại vào danh sách
-            this.AddRange(items);
+            this.AddRange(items);                                          // Đưa các phần tử của trang hiện tại vào List
         }
 
-        // Kiểm tra xem có trang trước đó không (nếu trang hiện tại > 1 thì có trang trước)
-        public bool HasPreviousPage => PageIndex > 1;
+        public bool HasPreviousPage => PageIndex > 1;          // Có trang trước nếu trang hiện tại lớn hơn 1
+        public bool HasNextPage => PageIndex < TotalPages;      // Có trang kế tiếp nếu trang hiện tại nhỏ hơn tổng số trang
 
-        // Kiểm tra xem có trang kế tiếp không (nếu trang hiện tại < tổng số trang thì có trang sau)
-        public bool HasNextPage => PageIndex < TotalPages;
-
-        // Hàm static tạo đối tượng phân trang từ một tập hợp dữ liệu ban đầu
+        // Hàm static cắt dữ liệu phân trang
         public static PaginatedList<T> Create(IEnumerable<T> source, int pageIndex, int pageSize)
         {
-            var count = source.Count();
-            if (pageIndex < 1) pageIndex = 1;
+            var count = source.Count();                        // Đếm tổng số phần tử
+            if (pageIndex < 1) pageIndex = 1;                  // Đảm bảo số trang tối thiểu là 1
 
-            // DÙNG LINQ:
-            // - Skip((pageIndex - 1) * pageSize): Bỏ qua các bản ghi của các trang trước đó
-            // - Take(pageSize): Lấy đúng số lượng bản ghi của trang hiện tại
-            // Ví dụ: Trang 2 (pageIndex = 2, pageSize = 3):
-            //   Skip((2 - 1) * 3) = Bỏ qua 3 bản ghi đầu (bản ghi 1, 2, 3)
-            //   Take(3) = Lấy 3 bản ghi tiếp theo (bản ghi 4, 5, 6)
+            // LINQ: Skip() bỏ qua các trang trước, Take() lấy đúng số phần tử trang hiện tại
             var items = source.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
-            return new PaginatedList<T>(items, count, pageIndex, pageSize);
+            return new PaginatedList<T>(items, count, pageIndex, pageSize); // Trả về đối tượng PaginatedList
         }
     }
 }

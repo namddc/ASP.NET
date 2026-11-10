@@ -1,0 +1,102 @@
+@* Khai báo kiểu Model truyền vào View là PaginatedList chứa danh sách Category *@
+@model bai5.Models.PaginatedList<bai5.Models.Category>
+
+@{
+    ViewData["Title"] = "Danh sách Category";
+}
+
+<h1>Index</h1>
+
+@* Form tìm kiếm *@
+<form asp-action="Index" method="get">
+    <p>
+        Tìm kiếm: <input type="text" name="searchString" value="@ViewBag.CurrentFilter" placeholder="Nhập tên hoặc ID..." />
+        <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
+        <input type="submit" value="Search" class="btn btn-primary btn-sm" />
+        <a asp-action="Index">Quay lại danh sách</a>
+    </p>
+</form>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+
+@* Bảng hiển thị danh mục *@
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @* Sắp xếp theo CategoryId *@
+                <a asp-action="Index" 
+                   asp-route-sortOrder="@ViewBag.IdSortParm" 
+                   asp-route-currentFilter="@ViewBag.CurrentFilter">
+                    CategoryId
+                    @(ViewBag.CurrentSort == "id_desc" ? "▼" : "▲")
+                </a>
+            </th>
+            <th>
+                @* Sắp xếp theo Name *@
+                <a asp-action="Index" 
+                   asp-route-sortOrder="@ViewBag.NameSortParm" 
+                   asp-route-currentFilter="@ViewBag.CurrentFilter">
+                    Name
+                    @(ViewBag.CurrentSort == "name_desc" ? "▼" : (ViewBag.CurrentSort == "name_asc" ? "▲" : ""))
+                </a>
+            </th>
+            <th>Description</th>
+            <th>CreatedDate</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CategoryId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id = item.CategoryId }) |
+                @Html.ActionLink("Details", "Details", new { id = item.CategoryId }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.CategoryId })
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+@* Thanh phân trang *@
+<div>
+    <span>Trang @Model.PageIndex / @(Model.TotalPages == 0 ? 1 : Model.TotalPages) (Tổng: @Model.TotalItems)</span>
+    <ul class="pagination pagination-sm d-inline-flex ms-3">
+        <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+            <a class="page-link" asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex - 1)"
+               asp-route-sortOrder="@ViewBag.CurrentSort"
+               asp-route-currentFilter="@ViewBag.CurrentFilter">Trước</a>
+        </li>
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link" asp-action="Index"
+                   asp-route-pageNumber="@i"
+                   asp-route-sortOrder="@ViewBag.CurrentSort"
+                   asp-route-currentFilter="@ViewBag.CurrentFilter">@i</a>
+            </li>
+        }
+        <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+            <a class="page-link" asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex + 1)"
+               asp-route-sortOrder="@ViewBag.CurrentSort"
+               asp-route-currentFilter="@ViewBag.CurrentFilter">Sau</a>
+        </li>
+    </ul>
+</div>
